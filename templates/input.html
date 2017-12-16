@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Generates RA and Dec coordinates for objects defined by two line element definitions.">
+    <meta name="author" content="Paul Chote">
+    <meta charset="utf-8">
+    <title>TLE Coordinate Generator</title>
+    <link href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700,400italic" rel="stylesheet">
+    <link href="{{ url_for('static', filename='toolkit-inverse.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='application.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.css">
+    <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12 content">
+          <h1>TLE Coordinate Generator</h1>
+        </div>
+      </div>
+      <div class="row m-b">
+        <div class="col-sm-12 content form form-horizontal">
+            <div class="form-group">
+              <label for="coordinates">Enter targets:</label>
+              <textarea name="coords" class="form-control input-block" style="height: 350px"></textarea>
+              <span>Each target should specify the three line TLE definition and a fourth line specifying an observation date in ISO-T format (YYYY-MM-DD-THH:MM:SS).</span>
+            </div>
+            <div class="form-group">
+              <label for="survey" class="control-label col-sm-2">Observing site:</label>
+              <select name="survey" class="form-control input-block col-sm-2">
+                <option selected>La Palma</option>
+              </select>
+              <div class="col-sm-2">
+                <button class="btn btn-primary" id="generate">Generate</button>
+              </div>
+            </div>
+        </div>
+      </div>
+      <div id="errorrow" class="row m-b">
+        <span id="error" class="label-danger"></span>
+      </div>
+      <div id="chartrow" class="row">
+        <table id="table"></table>
+      </div>
+    </div>
+    <script src="{{ url_for('static', filename='toolkit.js') }}"></script>
+    <script src="{{ url_for('static', filename='tlephem.js') }}"></script>
+    <script>
+      var generateURL = '{{ url_for('generate_json') }}';
+
+      $(document).ready(setup);
+    </script>
+  </body>
+</html>
