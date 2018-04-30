@@ -22,7 +22,8 @@ import math
 import urllib.request
 import os
 import sys
-import ephem
+from skyfield.api import load, Topos, utc
+from skyfield.sgp4lib import EarthSatellite
 
 from flask import abort
 from flask import Flask
@@ -47,34 +48,37 @@ def sexagesimal(angle):
     return '{:d}:{:02d}:{:05.2f}'.format(degrees, minutes, seconds)
 
 # TODO: Generalize this to support other sites
-SITE_LATITUDE = 28.7603135
-SITE_LONGITUDE = -17.8796168
+SITE_LATITUDE = '28.7603135N'
+SITE_LONGITUDE = '17.8796168 W'
 SITE_ELEVATION = 2387
 
 def generate_ephemeris(name, tle1, tle2, date_str):
     date = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
+    date = date.replace(tzinfo=utc)
+
     print('name', name)
     print('tle1', tle1)
     print('tle2', tle2)
     print('date', date)
-    obs = ephem.Observer()
-    # pylint: disable=assigning-non-slot
-    obs.lat = SITE_LATITUDE*ephem.degree
-    obs.lon = SITE_LONGITUDE*ephem.degree
-    obs.elev = SITE_ELEVATION
-    obs.date = date
-    # pylint: enable=assigning-non-slot
 
-    target = ephem.readtle(name, tle1, tle2)
-    target.compute(obs.date)
+    observer = Topos(SITE_LATITUDE, SITE_LONGITUDE, elevation_m=SITE_ELEVATION)
+    time = load.timescale().utc(date)
+    target = EarthSatellite(tle1, tle2, name)
+    ra, dec, distance = (target - observer).at(time).radec()
+
+    subpos = target.at(time).subpoint()
+    lat = subpos.latitude.degrees
+    lon = subpos.longitude.degrees
+    if lon > 180:
+        lon -= 360
 
     return {
         'name': name,
         'date': date.strftime('%Y-%m-%dT%H:%M:%S'),
-        'ra': sexagesimal(target.ra * 12 / math.pi),
-        'dec': sexagesimal(target.dec * 180 / math.pi),
-        'latitude': sexagesimal(target.sublat * 180 / math.pi),
-        'longitude': sexagesimal(target.sublong * 180 / math.pi)
+        'ra': sexagesimal(ra.hours),
+        'dec': sexagesimal(dec.degrees),
+        'latitude': round(lat, 3),
+        'longitude': round(lon, 3)
     }
 
 def process_input(targets):
