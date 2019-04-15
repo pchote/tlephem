@@ -14,14 +14,8 @@
 
 # pylint: disable=invalid-name
 
-import argparse
-import base64
+
 import datetime
-import io
-import math
-import urllib.request
-import os
-import sys
 from skyfield.api import load, Topos, utc
 from skyfield.sgp4lib import EarthSatellite
 
@@ -30,6 +24,10 @@ from flask import Flask
 from flask import jsonify
 from flask import render_template
 from flask import request
+
+
+app = Flask(__name__)
+
 
 def sexagesimal(angle):
     """Formats a decimal number in sexagesimal format"""
@@ -47,10 +45,12 @@ def sexagesimal(angle):
 
     return '{:d}:{:02d}:{:05.2f}'.format(degrees, minutes, seconds)
 
+
 # TODO: Generalize this to support other sites
 SITE_LATITUDE = '28.7603135N'
 SITE_LONGITUDE = '17.8796168 W'
 SITE_ELEVATION = 2387
+
 
 def generate_ephemeris(name, tle1, tle2, date_str):
     date = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
@@ -81,17 +81,18 @@ def generate_ephemeris(name, tle1, tle2, date_str):
         'longitude': round(lon, 3)
     }
 
+
 def process_input(targets):
     results = []
     for target in targets:
         results.append(generate_ephemeris(target['name'], target['tle1'], target['tle2'], target['date']))
     return jsonify(results)
 
-app = Flask(__name__)
 
 @app.route('/')
 def input_display():
     return render_template('input.html')
+
 
 @app.route('/generate', methods=['POST'])
 def generate_json():
