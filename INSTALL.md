@@ -1,18 +1,29 @@
-##### Notes for deploying on OpenSUSE
+##### Notes for deploying on CentOS 7
 
-Install nginx, uwsgi, uwsgi-python3 packages (need server repo enabled).
+Add the `epel` repository and install the `nginx`, `uwsgi`, `uwsgi-python36` packages.
+Install the python dependencies `python36-skyfield`
 
-Clone the repository to /srv/tlephem/appdata/ and chown -R nginx:nginx
-Move config/tlephem.ini to /etc/uwsgi/vassals/ (uWSGI Emperor config file)
-Move config/tlephem.conf to /etc/nginx/conf.d/ (nginx config file)
+Clone the repository to a useful location and edit `tlephem.service` to point to it
+Copy `tlephem.service` to `/usr/lib/systemd/system/`
 
-Open port 80 in the firewall by setting `FW_SERVICES_EXT_TCP="80"` in /etc/sysconfig/SuSEfirewall2
+Create directories `/srv/sockets`, `/srv/data/` and `chown nginx:nginx` them.
 
-Enable and start services
+Enable and start the `tlephem` service.
 
+Add to the nginx config
 ```
-systemctl enable nginx uwsgi
-systemctl start nginx uwsgi
-systemctl restart SuSEfirewall2
+location = /tlephem { rewrite ^ /tlephem/; }
+
+location /tlephem/static {
+    alias {{PROJECT_PATH}}/static;
+}
+
+location /tlephem/ {
+    uwsgi_pass unix:/srv/sockets/tlephem.sock;
+    uwsgi_param SCRIPT_NAME /tlephem;
+    include uwsgi_params;
+}
 ```
 
+Enable and start the `nginx` service.
+Open the firewall if needed `sudo firewall-cmd --permanent --zone=public --add-service=http && sudo firewall-cmd --reload`

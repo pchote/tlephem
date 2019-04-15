@@ -16,7 +16,8 @@
 
 
 import datetime
-from skyfield.api import load, Topos, utc
+import os
+from skyfield.api import load, Loader, Topos, utc
 from skyfield.sgp4lib import EarthSatellite
 
 from flask import abort
@@ -27,6 +28,10 @@ from flask import request
 
 
 app = Flask(__name__)
+
+# Override download directory for data files
+if 'TLEPHEM_DATA_DIR' in os.environ:
+    load = Loader(os.environ['TLEPHEM_DATA_DIR'])
 
 
 def sexagesimal(angle):

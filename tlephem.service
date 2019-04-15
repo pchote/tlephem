@@ -1,0 +1,15 @@
+[Unit]
+Description=uWSGI server for Finding Chart generator
+After=network.target
+
+[Service]
+User=nginx
+Group=nginx
+WorkingDirectory={{PROJECT_DIR}}}
+Environment="TLEPHEM_DATA_DIR=/srv/data"
+ExecStart=/usr/sbin/uwsgi --ini tlephem.ini
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGINT
+
+[Install]
+WantedBy=multi-user.target
