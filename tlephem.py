@@ -20,6 +20,10 @@ import os
 from skyfield.api import load, Loader, Topos, utc
 from skyfield.sgp4lib import EarthSatellite
 
+from astropy.coordinates import Angle, EarthLocation, SkyCoord
+from astropy.time import Time
+import astropy.units as u
+
 from flask import abort
 from flask import Flask
 from flask import jsonify
@@ -33,33 +37,21 @@ app = Flask(__name__)
 if 'TLEPHEM_DATA_DIR' in os.environ:
     load = Loader(os.environ['TLEPHEM_DATA_DIR'])
 
-
-def sexagesimal(angle):
-    """Formats a decimal number in sexagesimal format"""
-    # TODO: Replace with astropy Angle.to_string(sep=':')
-    negative = angle < 0
-    angle = abs(angle)
-
-    degrees = int(angle)
-    angle = (angle - degrees) * 60
-    minutes = int(angle)
-    seconds = (angle - minutes) * 60
-
-    if negative:
-        degrees *= -1
-
-    return '{:d}:{:02d}:{:05.2f}'.format(degrees, minutes, seconds)
-
-
 # TODO: Generalize this to support other sites
+# TODO: Deduplicate with EarthLocation
 SITE_LATITUDE = '28.7603135N'
 SITE_LONGITUDE = '17.8796168 W'
 SITE_ELEVATION = 2387
+SITE_LOCATION = EarthLocation(
+    lat=28.7603135*u.deg,
+    lon=-17.8796168*u.deg,
+    height=2387*u.m)
 
 
 def generate_ephemeris(name, tle1, tle2, date_str):
     date = datetime.datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S')
     date = date.replace(tzinfo=utc)
+    lst = Time(date, scale='utc', location=SITE_LOCATION).sidereal_time('apparent')
 
     print('name', name)
     print('tle1', tle1)
@@ -70,6 +62,7 @@ def generate_ephemeris(name, tle1, tle2, date_str):
     time = load.timescale().utc(date)
     target = EarthSatellite(tle1, tle2, name)
     ra, dec, distance = (target - observer).at(time).radec()
+    alt, az, distance = (target - observer).at(time).altaz()
 
     subpos = target.at(time).subpoint()
     lat = subpos.latitude.degrees
@@ -77,11 +70,23 @@ def generate_ephemeris(name, tle1, tle2, date_str):
     if lon > 180:
         lon -= 360
 
+    field = SkyCoord(ra.hours, dec.degrees, unit=(u.hourangle, u.deg))
+
+    time2 = load.timescale().utc(date + datetime.timedelta(seconds=5))
+    ra2, dec2, distance2 = (target - observer).at(time2).radec()
+    dra = (ra2._degrees - ra._degrees) * 3600 / 5
+    ddec = (dec2.degrees - dec.degrees) * 3600 / 5
+
     return {
         'name': name,
         'date': date.strftime('%Y-%m-%dT%H:%M:%S'),
-        'ra': sexagesimal(ra.hours),
-        'dec': sexagesimal(dec.degrees),
+        'ra': ra.to(u.hourangle).to_string(sep=':'),
+        'ha': (lst - field.icrs.ra).wrap_at(12 * u.hourangle).to_string(sep=':', unit=u.hourangle, precision=2),
+        'dec': dec.to(u.deg).to_string(sep=':'),
+        'dra': round(dra, 3),
+        'ddec': round(ddec, 3),
+        'alt': round(alt.degrees, 6),
+        'az': round(az.degrees, 6),
         'latitude': round(lat, 3),
         'longitude': round(lon, 3)
     }

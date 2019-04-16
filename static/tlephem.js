@@ -48,6 +48,11 @@ function setup() {
           {field: 'date', title: 'Date'},
           {field: 'ra', title: 'RA'},
           {field: 'dec', title: 'Dec'},
+          {field: 'ha', title: 'HA'},
+          {field: 'dra', title: 'dRA'},
+          {field: 'ddec', title: 'dDec'},
+          {field: 'alt', title: 'Alt'},
+          {field: 'az', title: 'Az'},
           {field: 'longitude', title: 'Longitude'},
           {field: 'latitude', title: 'Latitude'}]});
 

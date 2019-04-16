@@ -1,7 +1,7 @@
 ##### Notes for deploying on CentOS 7
 
 Add the `epel` repository and install the `nginx`, `uwsgi`, `uwsgi-python36` packages.
-Install the python dependencies `python36-skyfield`
+Install the python dependencies `python36-astropy`, `python36-skyfield`.
 
 Clone the repository to a useful location and edit `tlephem.service` to point to it
 Copy `tlephem.service` to `/usr/lib/systemd/system/`
