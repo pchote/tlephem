@@ -38,10 +38,6 @@ if 'TLEPHEM_DATA_DIR' in os.environ:
     load = Loader(os.environ['TLEPHEM_DATA_DIR'])
 
 # TODO: Generalize this to support other sites
-# TODO: Deduplicate with EarthLocation
-SITE_LATITUDE = '28.7603135N'
-SITE_LONGITUDE = '17.8796168 W'
-SITE_ELEVATION = 2387
 SITE_LOCATION = EarthLocation(
     lat=28.7603135*u.deg,
     lon=-17.8796168*u.deg,
@@ -57,8 +53,11 @@ def generate_ephemeris(name, tle1, tle2, date_str):
     print('tle1', tle1)
     print('tle2', tle2)
     print('date', date)
+    observer = Topos(
+        latitude_degrees=SITE_LOCATION.lat.to(u.deg).value,
+        longitude_degrees=SITE_LOCATION.lon.to(u.deg).value,
+        elevation_m=SITE_LOCATION.height.to(u.m).value)
 
-    observer = Topos(SITE_LATITUDE, SITE_LONGITUDE, elevation_m=SITE_ELEVATION)
     time = load.timescale().utc(date)
     target = EarthSatellite(tle1, tle2, name)
     ra, dec, distance = (target - observer).at(time).radec()
@@ -80,9 +79,9 @@ def generate_ephemeris(name, tle1, tle2, date_str):
     return {
         'name': name,
         'date': date.strftime('%Y-%m-%dT%H:%M:%S'),
-        'ra': ra.to(u.hourangle).to_string(sep=':'),
+        'ra': Angle(ra.to(u.deg)).to_string(unit=u.hourangle, sep=':'),
         'ha': (lst - field.icrs.ra).wrap_at(12 * u.hourangle).to_string(sep=':', unit=u.hourangle, precision=2),
-        'dec': dec.to(u.deg).to_string(sep=':'),
+        'dec': Angle(dec.to(u.deg)).to_string(unit=u.deg, sep=':'),
         'dra': round(dra, 3),
         'ddec': round(ddec, 3),
         'alt': round(alt.degrees, 6),
