@@ -1,13 +1,13 @@
 [Unit]
-Description=uWSGI server for Finding Chart generator
+Description=uWSGI server for satellite coordinate calculator
 After=network.target
 
 [Service]
-User=nginx
+User={{USER}}
 Group=nginx
-WorkingDirectory={{PROJECT_DIR}}}
-Environment="TLEPHEM_DATA_DIR=/srv/data"
-ExecStart=/usr/sbin/uwsgi --ini tlephem.ini
+WorkingDirectory={{PROJECT_DIR}}
+Environment="TLEPHEM_DATA_DIR=/tmp"
+ExecStart=/usr/local/bin/uwsgi --ini tlephem.ini
 ExecReload=/bin/kill -HUP $MAINPID
 KillSignal=SIGINT
 
